@@ -25,13 +25,24 @@ public class UserService {
     private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
     public Users register(Users user) {
+        // Check if the username already exists
+        if (repo.findByUsername(user.getUsername()) != null) {
+            throw new RuntimeException("The username is already taken. Try another username.");
+        }
+
+        // Check if the email already exists
+        if (repo.existsByEmail(user.getEmail())) {
+            throw new RuntimeException("The user email is already taken.");
+        }
+
         user.setPassword(encoder.encode(user.getPassword()));
-        repo.save(user);
-        return user;
+        return repo.save(user);
     }
 
     public String verify(Users user) {
-        Authentication authentication = authManager.authenticate(new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()));
+        Authentication authentication = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword())
+        );
         if (authentication.isAuthenticated()) {
             return jwtService.generateToken(user.getUsername());
         } else {
